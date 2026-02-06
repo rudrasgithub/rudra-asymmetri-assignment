@@ -127,11 +127,20 @@ export default function ChatInterface({
                 const lines = chunk.split("\n").filter((line) => line.trim());
 
                 for (const line of lines) {
-                    // Text content
-                    if (line.startsWith("0:")) {
-                        try {
-                            const text = JSON.parse(line.slice(2));
-                            fullContent += text;
+                    // Skip non-data lines
+                    if (!line.startsWith("data: ")) continue;
+
+                    const dataContent = line.slice(6); // Remove "data: " prefix
+
+                    // Skip [DONE] marker
+                    if (dataContent === "[DONE]") continue;
+
+                    try {
+                        const parsed = JSON.parse(dataContent);
+
+                        // Handle text delta
+                        if (parsed.type === "text-delta") {
+                            fullContent += parsed.delta || "";
                             setMessages((prev) => {
                                 const updated = [...prev];
                                 const lastMsg = updated[updated.length - 1];
@@ -140,57 +149,43 @@ export default function ChatInterface({
                                 }
                                 return updated;
                             });
-                        } catch {
-                            // Ignore parse errors
                         }
-                    }
-                    // Tool call start
-                    else if (line.startsWith("9:")) {
-                        try {
-                            const toolData = JSON.parse(line.slice(2));
-                            if (toolData.toolCallId) {
-                                const toolInvocation: ToolInvocation = {
-                                    toolCallId: toolData.toolCallId,
-                                    toolName: toolData.toolName,
-                                    args: toolData.args || {},
-                                    state: "pending",
-                                };
-                                currentToolInvocations = [...currentToolInvocations, toolInvocation];
-                                setMessages((prev) => {
-                                    const updated = [...prev];
-                                    const lastMsg = updated[updated.length - 1];
-                                    if (lastMsg?.role === "assistant") {
-                                        lastMsg.toolInvocations = currentToolInvocations;
-                                    }
-                                    return updated;
-                                });
-                            }
-                        } catch {
-                            // Ignore parse errors
+                        // Handle tool input start (tool call begins)
+                        else if (parsed.type === "tool-input-start") {
+                            const toolInvocation: ToolInvocation = {
+                                toolCallId: parsed.toolCallId,
+                                toolName: parsed.toolName,
+                                args: {},
+                                state: "pending",
+                            };
+                            currentToolInvocations = [...currentToolInvocations, toolInvocation];
+                            setMessages((prev) => {
+                                const updated = [...prev];
+                                const lastMsg = updated[updated.length - 1];
+                                if (lastMsg?.role === "assistant") {
+                                    lastMsg.toolInvocations = currentToolInvocations;
+                                }
+                                return updated;
+                            });
                         }
-                    }
-                    // Tool result
-                    else if (line.startsWith("a:")) {
-                        try {
-                            const resultData = JSON.parse(line.slice(2));
-                            if (resultData.toolCallId) {
-                                currentToolInvocations = currentToolInvocations.map((t) =>
-                                    t.toolCallId === resultData.toolCallId
-                                        ? { ...t, result: resultData.result, state: "result" as const }
-                                        : t
-                                );
-                                setMessages((prev) => {
-                                    const updated = [...prev];
-                                    const lastMsg = updated[updated.length - 1];
-                                    if (lastMsg?.role === "assistant") {
-                                        lastMsg.toolInvocations = currentToolInvocations;
-                                    }
-                                    return updated;
-                                });
-                            }
-                        } catch {
-                            // Ignore parse errors
+                        // Handle tool output available (tool result ready)
+                        else if (parsed.type === "tool-output-available") {
+                            currentToolInvocations = currentToolInvocations.map((t) =>
+                                t.toolCallId === parsed.toolCallId
+                                    ? { ...t, result: parsed.output, state: "result" as const }
+                                    : t
+                            );
+                            setMessages((prev) => {
+                                const updated = [...prev];
+                                const lastMsg = updated[updated.length - 1];
+                                if (lastMsg?.role === "assistant") {
+                                    lastMsg.toolInvocations = currentToolInvocations;
+                                }
+                                return updated;
+                            });
                         }
+                    } catch {
+                        // Ignore parse errors
                     }
                 }
             }
@@ -209,40 +204,38 @@ export default function ChatInterface({
     const handleChatSelect = (chatId: string) => router.push(`/?id=${chatId}`);
 
     return (
-        <div className="flex h-screen bg-gray-50 overflow-hidden">
-            {/* Sidebar */}
-            <div className="w-64 bg-white border-r hidden md:flex flex-col p-4 justify-between">
-                <div>
-                    <h1 className="font-bold text-xl mb-6 flex items-center gap-2">
-                        <Bot className="h-6 w-6 text-purple-600" /> Asymmetri AI
-                    </h1>
-                    <Button
-                        variant="outline"
-                        className="w-full mb-4 justify-start gap-2 border-dashed"
-                        onClick={handleNewChat}
-                    >
-                        <Plus className="h-4 w-4" /> New Chat
-                    </Button>
-                    <div className="space-y-1">
-                        <p className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
-                            Recent Chats
-                        </p>
-                        <ScrollArea className="h-[300px]">
-                            {history?.map((chat) => (
-                                <Button
-                                    key={chat.id}
-                                    variant={chat.id === initialChatId ? "secondary" : "ghost"}
-                                    className="w-full justify-start text-sm truncate px-2 mb-1"
-                                    onClick={() => handleChatSelect(chat.id)}
-                                >
-                                    <MessageSquare className="h-4 w-4 mr-2 opacity-70 flex-shrink-0" />
-                                    <span className="truncate w-full text-left">{chat.title}</span>
-                                </Button>
-                            ))}
-                        </ScrollArea>
+        <div className="flex h-screen bg-slate-50 overflow-hidden">
+            {/* Sidebar - No scroll on this, stays fixed */}
+            <div className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col p-4 flex-shrink-0 overflow-hidden">
+                <h1 className="font-bold text-xl mb-6 flex items-center gap-2">
+                    <Bot className="h-6 w-6 text-purple-600" /> Asymmetri AI
+                </h1>
+                <Button
+                    variant="outline"
+                    className="w-full mb-4 justify-start gap-2 border-dashed"
+                    onClick={handleNewChat}
+                >
+                    <Plus className="h-4 w-4" /> New Chat
+                </Button>
+                <div className="flex-1 overflow-hidden">
+                    <p className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
+                        Recent Chats
+                    </p>
+                    <div className="overflow-y-auto h-full pb-4">
+                        {history?.map((chat) => (
+                            <Button
+                                key={chat.id}
+                                variant={chat.id === initialChatId ? "secondary" : "ghost"}
+                                className="w-full justify-start text-sm truncate px-2 mb-1"
+                                onClick={() => handleChatSelect(chat.id)}
+                            >
+                                <MessageSquare className="h-4 w-4 mr-2 opacity-70 flex-shrink-0" />
+                                <span className="truncate w-full text-left">{chat.title}</span>
+                            </Button>
+                        ))}
                     </div>
                 </div>
-                <div className="border-t pt-4">
+                <div className="border-t pt-4 mt-auto">
                     <div className="text-sm text-gray-500 mb-2 truncate">User: {userName}</div>
                     <Button
                         variant="destructive"
@@ -264,15 +257,15 @@ export default function ChatInterface({
                 </div>
             </div>
 
-            {/* Main chat area */}
-            <div className="flex-1 flex flex-col max-w-5xl mx-auto w-full bg-white shadow-xl h-full">
+            {/* Main chat area - Only this section scrolls */}
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {error && (
-                    <div className="p-4 bg-red-50 text-red-600 text-sm border-b border-red-200">
+                    <div className="p-4 bg-red-50 text-red-600 text-sm border-b border-red-100">
                         Error: {error.message}
                     </div>
                 )}
 
-                <ScrollArea className="flex-1 p-4">
+                <div className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-slate-50 to-white">
                     <div className="flex flex-col gap-6 pb-4">
                         {/* Empty state */}
                         {messages.length === 0 && (
@@ -320,14 +313,14 @@ export default function ChatInterface({
                             // For user messages, always render
                             if (m.role === "user") {
                                 return (
-                                    <div key={m.id} className="flex gap-3 justify-end">
-                                        <div className="max-w-[80%] rounded-2xl p-4 bg-black text-white rounded-tr-none">
+                                    <div key={m.id} className="flex gap-3 justify-end animate-in slide-in-from-right-2 duration-200">
+                                        <div className="max-w-[80%] rounded-2xl rounded-tr-sm p-4 bg-gradient-to-br from-violet-600 to-purple-700 text-white">
                                             <div className="text-sm leading-relaxed whitespace-pre-wrap">
                                                 {m.content}
                                             </div>
                                         </div>
-                                        <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                            <User className="h-5 w-5 text-gray-600" />
+                                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center flex-shrink-0 ring-2 ring-slate-200">
+                                            <User className="h-4 w-4 text-white" />
                                         </div>
                                     </div>
                                 );
@@ -339,12 +332,12 @@ export default function ChatInterface({
                             }
 
                             return (
-                                <div key={m.id} className="flex gap-3 justify-start">
-                                    <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center border border-purple-200 flex-shrink-0">
-                                        <Bot className="h-5 w-5 text-purple-600" />
+                                <div key={m.id} className="flex gap-3 justify-start animate-in slide-in-from-left-2 duration-200">
+                                    <div className="h-9 w-9 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0 ring-2 ring-purple-200">
+                                        <Bot className="h-4 w-4 text-white" />
                                     </div>
 
-                                    <div className="max-w-[80%] rounded-2xl p-4 bg-gray-100 text-black rounded-tl-none">
+                                    <div className="max-w-[80%] rounded-2xl rounded-tl-sm p-4 bg-white border border-slate-200 text-slate-800">
                                         {/* Show fallback message if all tools failed */}
                                         {showFallback ? (
                                             <div className="text-sm text-gray-500 italic">
@@ -387,14 +380,18 @@ export default function ChatInterface({
 
                         {/* Loading indicator */}
                         {isLoading && messages[messages.length - 1]?.role === "user" && (
-                            <div className="flex gap-3 justify-start">
-                                <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center border border-purple-200">
-                                    <Bot className="h-5 w-5 text-purple-600" />
+                            <div className="flex gap-3 justify-start animate-in fade-in duration-300">
+                                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center ring-2 ring-purple-200">
+                                    <Bot className="h-4 w-4 text-white" />
                                 </div>
-                                <div className="bg-gray-100 rounded-2xl rounded-tl-none p-4">
-                                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                        AI is thinking...
+                                <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-sm px-5 py-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex gap-1">
+                                            <span className="w-2 h-2 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                                            <span className="w-2 h-2 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                                            <span className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" />
+                                        </div>
+                                        <span className="text-sm text-slate-500">Thinking...</span>
                                     </div>
                                 </div>
                             </div>
@@ -402,20 +399,25 @@ export default function ChatInterface({
 
                         <div ref={scrollRef} />
                     </div>
-                </ScrollArea>
+                </div>
 
                 {/* Input form */}
-                <div className="p-4 border-t bg-white">
+                <div className="p-4 border-t border-slate-100 bg-white flex-shrink-0">
                     <form onSubmit={onSubmit} className="flex gap-3">
                         <input
                             type="text"
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             placeholder="Type your message..."
-                            className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-sm"
                             disabled={isLoading}
                         />
-                        <Button type="submit" disabled={isLoading || !inputValue.trim()} size="icon">
+                        <Button
+                            type="submit"
+                            disabled={isLoading || !inputValue.trim()}
+                            size="icon"
+                            className="h-11 w-11 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 transition-all"
+                        >
                             {isLoading ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (

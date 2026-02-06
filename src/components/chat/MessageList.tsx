@@ -50,8 +50,8 @@ export default function MessageList({ messages, isProcessing }: MessageListProps
     // Empty state - premium landing
     if (messages.length === 0) {
         return (
-            <ScrollArea className="flex-1">
-                <div className="flex flex-col items-center justify-center min-h-[70vh] px-6">
+            <div className="flex-1 overflow-y-auto">
+                <div className="flex flex-col items-center justify-center min-h-full px-6 py-12">
                     {/* Animated logo */}
                     <div className="relative mb-8">
                         <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-purple-600 rounded-3xl blur-2xl opacity-30 animate-pulse" />
@@ -91,13 +91,13 @@ export default function MessageList({ messages, isProcessing }: MessageListProps
                         />
                     </div>
                 </div>
-            </ScrollArea>
+            </div>
         );
     }
 
     return (
-        <ScrollArea className="flex-1">
-            <div className="flex flex-col gap-6 p-6 pb-4">
+        <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex flex-col gap-6 pb-4 max-w-4xl mx-auto">
                 {messages.map((msg) => {
                     // User message bubble
                     if (msg.role === "user") {
@@ -187,7 +187,7 @@ export default function MessageList({ messages, isProcessing }: MessageListProps
 
                 <div ref={bottomRef} />
             </div>
-        </ScrollArea>
+        </div>
     );
 }
 

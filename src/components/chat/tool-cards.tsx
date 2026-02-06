@@ -6,11 +6,11 @@ import { WeatherData, StockData, RaceData } from "@/types";
 // Weather Icon Helper
 function getWeatherIcon(condition?: string) {
     const c = condition?.toLowerCase() || "";
-    if (c.includes("rain") || c.includes("drizzle")) return <CloudRain className="h-10 w-10 text-blue-400" />;
-    if (c.includes("snow")) return <Snowflake className="h-10 w-10 text-blue-300" />;
-    if (c.includes("cloud")) return <Cloud className="h-10 w-10 text-slate-400" />;
-    if (c.includes("clear") || c.includes("sun")) return <Sun className="h-10 w-10 text-amber-400" />;
-    return <Cloud className="h-10 w-10 text-slate-400" />;
+    if (c.includes("rain") || c.includes("drizzle")) return <CloudRain className="h-6 w-6 text-blue-400" />;
+    if (c.includes("snow")) return <Snowflake className="h-6 w-6 text-blue-300" />;
+    if (c.includes("cloud")) return <Cloud className="h-6 w-6 text-slate-400" />;
+    if (c.includes("clear") || c.includes("sun")) return <Sun className="h-6 w-6 text-amber-400" />;
+    return <Cloud className="h-6 w-6 text-slate-400" />;
 }
 
 // Weather Card Component
@@ -20,33 +20,27 @@ export function WeatherCard({ data }: { data: WeatherData }) {
     }
 
     return (
-        <div className="mt-4 p-5 bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/30 max-w-sm text-white overflow-hidden relative">
-            {/* Background decoration */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-
-            <div className="relative">
-                <div className="flex items-start justify-between mb-4">
-                    <div>
-                        <h3 className="font-bold text-xl">{data.location}</h3>
-                        <p className="text-sm text-white/80 capitalize">{data.condition}</p>
-                    </div>
-                    {getWeatherIcon(data.condition)}
+        <div className="mt-3 p-3 bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 rounded-xl text-white overflow-hidden">
+            <div className="flex items-center justify-between mb-2">
+                <div>
+                    <h3 className="font-semibold text-sm">{data.location}</h3>
+                    <p className="text-xs text-white/80 capitalize">{data.condition}</p>
                 </div>
+                {getWeatherIcon(data.condition)}
+            </div>
 
-                <div className="text-6xl font-bold mb-4 tracking-tight">
-                    {data.temperature}°
+            <div className="text-3xl font-bold mb-2 tracking-tight">
+                {data.temperature}°
+            </div>
+
+            <div className="flex gap-3 text-xs">
+                <div className="flex items-center gap-1.5 bg-white/20 px-2 py-1 rounded-full">
+                    <Droplets className="h-3 w-3" />
+                    <span>{data.humidity}%</span>
                 </div>
-
-                <div className="flex gap-6 text-sm">
-                    <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
-                        <Droplets className="h-4 w-4" />
-                        <span>{data.humidity}%</span>
-                    </div>
-                    <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
-                        <Wind className="h-4 w-4" />
-                        <span>{data.wind} km/h</span>
-                    </div>
+                <div className="flex items-center gap-1.5 bg-white/20 px-2 py-1 rounded-full">
+                    <Wind className="h-3 w-3" />
+                    <span>{data.wind} km/h</span>
                 </div>
             </div>
         </div>
@@ -63,38 +57,29 @@ export function StockCard({ data }: { data: StockData }) {
     const isPositive = changeNum >= 0;
 
     return (
-        <div className={`mt-4 p-5 rounded-2xl shadow-lg max-w-sm overflow-hidden relative ${isPositive
-                ? "bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 shadow-green-500/30"
-                : "bg-gradient-to-br from-rose-400 via-red-500 to-pink-600 shadow-red-500/30"
+        <div className={`mt-3 p-3 rounded-xl overflow-hidden ${isPositive
+            ? "bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600"
+            : "bg-gradient-to-br from-rose-400 via-red-500 to-pink-600"
             } text-white`}>
-            {/* Background decoration */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-
-            <div className="relative">
-                <div className="flex items-start justify-between mb-3">
-                    <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-medium bg-white/20 px-2 py-0.5 rounded">STOCK</span>
-                        </div>
-                        <h3 className="font-bold text-2xl tracking-wide">{data.symbol}</h3>
-                    </div>
-                    <div className={`p-2 rounded-xl ${isPositive ? "bg-white/20" : "bg-white/20"}`}>
-                        {isPositive ? <TrendingUp className="h-6 w-6" /> : <TrendingDown className="h-6 w-6" />}
-                    </div>
+            <div className="flex items-center justify-between mb-2">
+                <div>
+                    <span className="text-[10px] font-medium bg-white/20 px-1.5 py-0.5 rounded">STOCK</span>
+                    <h3 className="font-bold text-lg tracking-wide">{data.symbol}</h3>
                 </div>
-
-                <div className="text-4xl font-bold mb-2 tracking-tight">
-                    ${data.price}
+                <div className="p-1.5 rounded-lg bg-white/20">
+                    {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
                 </div>
+            </div>
 
-                <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1 text-sm font-medium bg-white/20 px-3 py-1.5 rounded-full">
-                        {isPositive ? "+" : ""}{data.change}
-                    </span>
-                    <span className="text-sm text-white/80">
-                        ({data.changePercent})
-                    </span>
-                </div>
+            <div className="text-2xl font-bold mb-1 tracking-tight">
+                ${data.price}
+            </div>
+
+            <div className="flex items-center gap-2 text-xs">
+                <span className="flex items-center gap-1 font-medium bg-white/20 px-2 py-1 rounded-full">
+                    {isPositive ? "+" : ""}{data.change}
+                </span>
+                <span className="text-white/80">({data.changePercent})</span>
             </div>
         </div>
     );
@@ -107,47 +92,36 @@ export function F1Card({ data }: { data: RaceData }) {
     }
 
     return (
-        <div className="mt-4 p-5 bg-gradient-to-br from-red-500 via-rose-500 to-orange-500 rounded-2xl shadow-lg shadow-red-500/30 max-w-sm text-white overflow-hidden relative">
-            {/* Racing flag decoration */}
-            <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="mt-3 p-3 bg-gradient-to-br from-red-500 via-rose-500 to-orange-500 rounded-xl text-white overflow-hidden">
+            <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 bg-white/20 rounded-lg">
+                    <Flag className="h-4 w-4" />
+                </div>
+                <div>
+                    <span className="text-[10px] font-medium bg-white/20 px-1.5 py-0.5 rounded">ROUND {data.round}</span>
+                    <h3 className="font-semibold text-sm mt-0.5">{data.raceName}</h3>
+                </div>
+            </div>
 
-            <div className="relative">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-white/20 rounded-xl">
-                        <Flag className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <span className="text-xs font-medium bg-white/20 px-2 py-0.5 rounded">ROUND {data.round}</span>
-                        <h3 className="font-bold text-lg mt-1">{data.raceName}</h3>
-                    </div>
+            <div className="space-y-1.5 text-xs">
+                <div className="flex items-center gap-2">
+                    <MapPin className="h-3 w-3 text-white/70" />
+                    <span className="font-medium">{data.circuit}</span>
                 </div>
 
-                <div className="space-y-3 text-sm">
-                    <div className="flex items-center gap-3">
-                        <MapPin className="h-4 w-4 text-white/70" />
-                        <div>
-                            <p className="text-white/70 text-xs">Circuit</p>
-                            <p className="font-medium">{data.circuit}</p>
-                        </div>
-                    </div>
+                <div className="flex items-center gap-2">
+                    <span className="text-white/70">📍</span>
+                    <span>{data.location}, {data.country}</span>
+                </div>
 
-                    <div className="flex items-center gap-3">
-                        <div className="h-4 w-4 flex items-center justify-center text-white/70">🌍</div>
-                        <div>
-                            <p className="text-white/70 text-xs">Location</p>
-                            <p className="font-medium">{data.location}, {data.country}</p>
-                        </div>
+                <div className="flex gap-2 pt-1">
+                    <div className="flex items-center gap-1.5 bg-white/20 px-2 py-1 rounded-lg flex-1">
+                        <Calendar className="h-3 w-3" />
+                        <span className="font-medium">{data.date}</span>
                     </div>
-
-                    <div className="flex gap-4 pt-2">
-                        <div className="flex items-center gap-2 bg-white/20 px-3 py-2 rounded-xl flex-1">
-                            <Calendar className="h-4 w-4" />
-                            <span className="font-medium">{data.date}</span>
-                        </div>
-                        <div className="flex items-center gap-2 bg-white/20 px-3 py-2 rounded-xl flex-1">
-                            <Clock className="h-4 w-4" />
-                            <span className="font-medium">{data.time}</span>
-                        </div>
+                    <div className="flex items-center gap-1.5 bg-white/20 px-2 py-1 rounded-lg flex-1">
+                        <Clock className="h-3 w-3" />
+                        <span className="font-medium">{data.time}</span>
                     </div>
                 </div>
             </div>

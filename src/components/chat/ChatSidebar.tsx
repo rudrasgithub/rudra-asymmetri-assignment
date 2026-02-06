@@ -23,6 +23,12 @@ export default function ChatSidebar({ currentUser, activeId, conversations }: Si
     };
 
     const startFreshChat = () => {
+        // Check if current chat is already empty (new chat)
+        const activeChat = conversations.find(c => c.id === activeId);
+        if (activeChat?.title === "New Chat") {
+            // Already on a new chat, don't create another
+            return;
+        }
         router.push("/");
     };
 
@@ -32,7 +38,7 @@ export default function ChatSidebar({ currentUser, activeId, conversations }: Si
     };
 
     return (
-        <aside className="w-72 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 hidden md:flex flex-col p-5 justify-between border-r border-slate-700/50">
+        <aside className="w-72 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 hidden md:flex flex-col p-5 justify-between border-r border-slate-700/50 flex-shrink-0 overflow-hidden">
             {/* Header with Logo */}
             <div>
                 <div className="flex items-center gap-3 mb-8">
@@ -69,8 +75,8 @@ export default function ChatSidebar({ currentUser, activeId, conversations }: Si
                                     key={item.id}
                                     variant="ghost"
                                     className={`w-full justify-start text-sm px-3 py-5 rounded-xl transition-all duration-200 ${item.id === activeId
-                                            ? "bg-gradient-to-r from-violet-500/20 to-purple-600/20 text-white border border-purple-500/30"
-                                            : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+                                        ? "bg-gradient-to-r from-violet-500/20 to-purple-600/20 text-white border border-purple-500/30"
+                                        : "text-slate-400 hover:text-white hover:bg-slate-700/50"
                                         }`}
                                     onClick={() => navigateToChat(item.id)}
                                 >

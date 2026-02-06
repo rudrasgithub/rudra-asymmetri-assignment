@@ -62,43 +62,80 @@ export default function ChatInterface({
             const lines = chunk.split("\n").filter(line => line.trim());
 
             for (const line of lines) {
-                // Text content prefix
-                if (line.startsWith("0:")) {
-                    try {
-                        const parsed = JSON.parse(line.slice(2));
-                        textAccumulator += parsed;
-                        updateLastMessage({ content: textAccumulator });
-                    } catch { }
+                // Debug: log all lines
+                console.log("Stream line:", line);
+
+                let dataContent = "";
+
+                // Handle SSE format (data: prefix)
+                if (line.startsWith("data: ")) {
+                    dataContent = line.slice(6);
+                    if (dataContent === "[DONE]") continue;
                 }
-                // Tool call initiation prefix
-                else if (line.startsWith("9:")) {
+                // Handle direct prefix format (legacy)
+                else if (line.startsWith("0:") || line.startsWith("9:") || line.startsWith("a:") || line.startsWith("e:")) {
+                    // Old format: 0:"text", 9:{tool}, a:{result}
+                    const prefix = line.charAt(0);
                     try {
-                        const toolInfo = JSON.parse(line.slice(2));
-                        if (toolInfo.toolCallId) {
+                        const content = JSON.parse(line.slice(2));
+                        if (prefix === "0" && typeof content === "string") {
+                            textAccumulator += content;
+                            updateLastMessage({ content: textAccumulator });
+                        } else if (prefix === "9" && content.toolCallId) {
                             const newTool: ToolInvocation = {
-                                toolCallId: toolInfo.toolCallId,
-                                toolName: toolInfo.toolName,
-                                args: toolInfo.args || {},
+                                toolCallId: content.toolCallId,
+                                toolName: content.toolName,
+                                args: content.args || {},
                                 state: "pending",
                             };
                             toolTracker = [...toolTracker, newTool];
                             updateLastMessage({ toolInvocations: toolTracker });
-                        }
-                    } catch { }
-                }
-                // Tool result prefix
-                else if (line.startsWith("a:")) {
-                    try {
-                        const resultInfo = JSON.parse(line.slice(2));
-                        if (resultInfo.toolCallId) {
+                        } else if (prefix === "a" && content.toolCallId) {
                             toolTracker = toolTracker.map(t =>
-                                t.toolCallId === resultInfo.toolCallId
-                                    ? { ...t, result: resultInfo.result, state: "result" as const }
+                                t.toolCallId === content.toolCallId
+                                    ? { ...t, result: content.result, state: "result" as const }
                                     : t
                             );
                             updateLastMessage({ toolInvocations: toolTracker });
                         }
                     } catch { }
+                    continue;
+                } else {
+                    continue;
+                }
+
+                // Parse SSE data content
+                try {
+                    const parsed = JSON.parse(dataContent);
+                    console.log("Parsed SSE:", parsed);
+
+                    // Handle text delta
+                    if (parsed.type === "text-delta") {
+                        textAccumulator += parsed.delta || "";
+                        updateLastMessage({ content: textAccumulator });
+                    }
+                    // Handle tool input start (tool call begins)
+                    else if (parsed.type === "tool-input-start") {
+                        const newTool: ToolInvocation = {
+                            toolCallId: parsed.toolCallId,
+                            toolName: parsed.toolName,
+                            args: {},
+                            state: "pending",
+                        };
+                        toolTracker = [...toolTracker, newTool];
+                        updateLastMessage({ toolInvocations: toolTracker });
+                    }
+                    // Handle tool output available (tool result ready)
+                    else if (parsed.type === "tool-output-available") {
+                        toolTracker = toolTracker.map(t =>
+                            t.toolCallId === parsed.toolCallId
+                                ? { ...t, result: parsed.output, state: "result" as const }
+                                : t
+                        );
+                        updateLastMessage({ toolInvocations: toolTracker });
+                    }
+                } catch (e) {
+                    console.log("Parse error:", e);
                 }
             }
         }
@@ -176,7 +213,7 @@ export default function ChatInterface({
             />
 
             {/* Main Chat Area */}
-            <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full bg-white/80 backdrop-blur-sm shadow-2xl shadow-slate-200/50 h-full border-x border-slate-100">
+            <main className="flex-1 flex flex-col w-full bg-white/80 backdrop-blur-sm border-l border-slate-100 overflow-hidden">
                 {/* Error Banner */}
                 {apiError && (
                     <div className="p-4 bg-gradient-to-r from-red-50 to-rose-50 text-red-600 text-sm border-b border-red-100 flex items-center gap-3">
