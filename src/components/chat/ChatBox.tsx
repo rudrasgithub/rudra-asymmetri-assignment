@@ -24,37 +24,91 @@ export default function ChatBox({ userName, chatId, previousChats }: ChatProps) 
     const [chatMessages, setChatMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(false);
 
-    function handleSubmit(e: FormEvent) {
+    async function handleSubmit(e: FormEvent) {
         e.preventDefault();
-
-        if (!prompt.trim()) return;
+        if (!prompt.trim() || loading) return;
 
         const userMsg: Message = {
             id: Date.now().toString(),
             text: prompt,
             sender: "user",
         };
-        setChatMessages([...chatMessages, userMsg]);
-        setPrompt("");
 
-        // TODO: Send to API and get response
+        const updatedMessages = [...chatMessages, userMsg];
+        setChatMessages(updatedMessages);
+        setPrompt("");
         setLoading(true);
-        setTimeout(() => {
+
+        try {
+            const response = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: updatedMessages.map((m) => ({
+                        role: m.sender === "user" ? "user" : "assistant",
+                        content: m.text,
+                    })),
+                }),
+            });
+
+            if (!response.ok) throw new Error("API error");
+
+            const reader = response.body?.getReader();
+            const decoder = new TextDecoder();
+            let botReply = "";
+
+            const botMsg: Message = {
+                id: (Date.now() + 1).toString(),
+                text: "",
+                sender: "bot",
+            };
+            setChatMessages([...updatedMessages, botMsg]);
+
+            while (reader) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split("\n").filter((line) => line.trim());
+
+                for (const line of lines) {
+                    if (line.startsWith("0:")) {
+                        try {
+                            const text = JSON.parse(line.slice(2));
+                            botReply += text;
+                            setChatMessages((prev) => {
+                                const updated = [...prev];
+                                updated[updated.length - 1] = {
+                                    ...updated[updated.length - 1],
+                                    text: botReply,
+                                };
+                                return updated;
+                            });
+                        } catch { }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Chat error:", error);
+            const errorMsg: Message = {
+                id: (Date.now() + 1).toString(),
+                text: "Sorry, something went wrong. Please try again.",
+                sender: "bot",
+            };
+            setChatMessages([...updatedMessages, errorMsg]);
+        } finally {
             setLoading(false);
-        }, 1000);
+        }
     }
 
-    // Switch to a different chat
     function openChat(id: string) {
         router.push(`/?id=${id}`);
     }
 
-    // Start a new chat
     function startNewChat() {
         router.push("/");
     }
 
-    // Handle sign out
     async function handleSignOut() {
         await signOut();
     }
@@ -63,13 +117,11 @@ export default function ChatBox({ userName, chatId, previousChats }: ChatProps) 
         <div className="flex h-screen bg-slate-50">
             {/* Left Sidebar */}
             <aside className="w-72 bg-slate-800 text-white flex flex-col">
-                {/* Header */}
                 <div className="p-5 border-b border-slate-700">
                     <h2 className="text-xl font-bold text-emerald-400">Rudra AI</h2>
                     <p className="text-xs text-slate-400 mt-1">Your personal assistant</p>
                 </div>
 
-                {/* New Chat Button */}
                 <div className="p-4">
                     <button
                         onClick={startNewChat}
@@ -79,7 +131,6 @@ export default function ChatBox({ userName, chatId, previousChats }: ChatProps) 
                     </button>
                 </div>
 
-                {/* Chat History */}
                 <div className="flex-1 overflow-y-auto px-3">
                     <p className="text-xs text-slate-500 uppercase tracking-wider mb-3 px-2">
                         Chat History
@@ -100,7 +151,6 @@ export default function ChatBox({ userName, chatId, previousChats }: ChatProps) 
                     </div>
                 </div>
 
-                {/* User Section */}
                 <div className="p-4 border-t border-slate-700 bg-slate-900/50">
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-sm font-medium">
@@ -124,12 +174,10 @@ export default function ChatBox({ userName, chatId, previousChats }: ChatProps) 
 
             {/* Main Chat Area */}
             <main className="flex-1 flex flex-col">
-                {/* Chat Header */}
                 <div className="px-6 py-4 bg-white border-b">
                     <h1 className="text-lg font-semibold text-slate-800">Chat</h1>
                 </div>
 
-                {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
                     {chatMessages.length === 0 ? (
                         <div className="text-center text-slate-400 mt-24">
@@ -168,7 +216,6 @@ export default function ChatBox({ userName, chatId, previousChats }: ChatProps) 
                     )}
                 </div>
 
-                {/* Input Area */}
                 <div className="p-4 bg-white border-t">
                     <form onSubmit={handleSubmit} className="flex gap-3 max-w-3xl mx-auto">
                         <input
