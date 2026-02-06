@@ -1,48 +1,58 @@
 import { auth } from "@/config/authHandler";
 import { redirect } from "next/navigation";
-import ChatBox from "@/components/chat/ChatBox";
+import ChatInterface from "@/components/chat/ChatInterface";
+import {
+  initializeConversation,
+  fetchUserConversations,
+  loadConversationMessages
+} from "@/app/actions";
+import { CMessage, PageProps } from "@/types";
 
-type Props = {
-  searchParams: Promise<{ id?: string }>;
-};
-
-export default async function Home({ searchParams }: Props) {
-  // check authentication
+export default async function HomePage({ searchParams }: PageProps) {
+  // Verify user authentication
   const session = await auth();
   if (!session?.user) {
     redirect("/login");
   }
 
-  // get current chat id from url
-  const params = await searchParams;
-  const currentId = params.id || "new";
+  // Extract conversation ID from URL params
+  const urlParams = await searchParams;
+  let activeConversationId = urlParams.id;
+  let conversationMessages: CMessage[] = [];
 
-  // sample chat list - will fetch from db later
-  const chatList = [
-    { id: "1", title: "Weather check" },
-    { id: "2", title: "Stock prices" },
-    { id: "3", title: "Stock prices" },
-    { id: "4", title: "Stock prices" },
-    { id: "5", title: "Stock prices" },
-    { id: "6", title: "Stock prices" },
-    { id: "7", title: "Stock prices" },
-    { id: "8", title: "Stock prices" },
-    { id: "9", title: "Stock prices" },
-    { id: "10", title: "Stock prices" },
-    { id: "11", title: "Stock prices" },
-    { id: "12", title: "Stock prices" },
-    { id: "13", title: "Stock prices" },
-    { id: "14", title: "Stock prices" },
-    { id: "15", title: "Stock prices" },
-    { id: "16", title: "Stock prices" },
-    { id: "17", title: "Stock prices" },
-  ];
+  // No ID provided - start fresh conversation
+  if (!activeConversationId) {
+    const freshConversationId = await initializeConversation("New Chat");
+    if (freshConversationId) {
+      redirect(`/?id=${freshConversationId}`);
+    }
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-red-500">Failed to start conversation. Please refresh.</p>
+      </div>
+    );
+  }
+
+  // ID exists - hydrate with existing messages
+  const storedMessages = await loadConversationMessages(activeConversationId);
+
+  conversationMessages = storedMessages.map((msg) => ({
+    id: msg.id,
+    role: msg.role as "user" | "assistant",
+    content: msg.content ?? "",
+    toolInvocations: (msg.toolInvocations as CMessage["toolInvocations"]) ?? undefined,
+  }));
+
+  // Fetch sidebar data
+  const conversationHistory = await fetchUserConversations();
 
   return (
-    <ChatBox
-      userName={session.user.name || "User"}
-      chatId={currentId}
-      previousChats={chatList}
+    <ChatInterface
+      key={activeConversationId}
+      userName={session.user.name ?? "Guest"}
+      initialChatId={activeConversationId}
+      history={conversationHistory}
+      initialMessages={conversationMessages}
     />
   );
 }

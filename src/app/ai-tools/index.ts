@@ -4,10 +4,10 @@ import { z } from "zod";
 // Weather Tool - fetches weather data for a location
 export const weatherTool = tool({
     description: "Get current weather for a location",
-    parameters: z.object({
+    inputSchema: z.object({
         location: z.string().describe("City name like London or Mumbai"),
     }),
-    execute: async ({ location }: { location: string }) => {
+    execute: async ({ location }) => {
         try {
             const apiKey = process.env.OPENWEATHER_API_KEY;
             const url = `https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${apiKey}&units=metric`;
@@ -35,7 +35,7 @@ export const weatherTool = tool({
 // Stock Price Tool - fetches stock price for a symbol
 export const stockTool = tool({
     description: "Get current stock price for a symbol",
-    parameters: z.object({
+    inputSchema: z.object({
         symbol: z.string().describe("Stock symbol like AAPL or GOOGL"),
     }),
     execute: async ({ symbol }) => {
@@ -66,7 +66,7 @@ export const stockTool = tool({
 // F1 Race Tool - fetches next F1 race info
 export const f1Tool = tool({
     description: "Get information about the next F1 race",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
     execute: async () => {
         try {
             const url = "https://ergast.com/api/f1/current/next.json";

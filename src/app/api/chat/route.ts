@@ -10,16 +10,17 @@ export async function POST(request: Request) {
     const { messages } = await request.json();
 
     const result = streamText({
-        model: google("gemini-1.5-flash"),
-        system: "You are a helpful assistant. You can check weather, stock prices, and F1 race info using your tools. Be friendly and concise.",
+        model: google("gemini-2.5-flash"),
+        system: "You are a helpful assistant. You can check weather, stock prices, and F1 race info using your tools. Always use the appropriate tool when asked about weather, stocks, or F1. Be friendly and concise.",
         messages,
         tools: {
             getWeather: weatherTool,
             getStockPrice: stockTool,
             getF1Race: f1Tool,
         },
-        maxSteps: 3
     });
 
-    return result.toTextStreamResponse();
+    // Use data stream for proper tool invocation streaming
+    // This enables the 0:, 9:, a: prefixes for text, tool calls, and tool results
+    return result.toUIMessageStreamResponse();
 }
