@@ -16,7 +16,11 @@ export const weatherTool = tool({
             const data = await response.json();
 
             if (data.cod !== 200) {
-                return { error: "Location not found" };
+                return {
+                    location: location,
+                    condition: "Unknown Location",
+                    error: "Location not found"
+                };
             }
 
             return {
@@ -26,8 +30,12 @@ export const weatherTool = tool({
                 humidity: data.main.humidity,
                 wind: Math.round(data.wind.speed * 3.6),
             };
-        } catch (error) {
-            return { error: "Failed to fetch weather" };
+        } catch {
+            return {
+                location: location,
+                condition: "Unknown Location",
+                error: "Failed to fetch weather"
+            };
         }
     },
 });
@@ -48,7 +56,11 @@ export const stockTool = tool({
 
             const quote = data["Global Quote"];
             if (!quote || !quote["05. price"]) {
-                return { error: "Stock not found" };
+                return {
+                    symbol: symbol,
+                    price: "0",
+                    error: "Stock not found"
+                };
             }
 
             return {
@@ -57,8 +69,12 @@ export const stockTool = tool({
                 change: parseFloat(quote["09. change"]).toFixed(2),
                 changePercent: quote["10. change percent"],
             };
-        } catch (error) {
-            return { error: "Failed to fetch stock" };
+        } catch {
+            return {
+                symbol: symbol,
+                price: "0",
+                error: "Failed to fetch stock"
+            };
         }
     },
 });
@@ -76,7 +92,10 @@ export const f1Tool = tool({
 
             const race = data.MRData.RaceTable.Races[0];
             if (!race) {
-                return { error: "No upcoming race found" };
+                return {
+                    raceName: "Unknown Race",
+                    error: "No upcoming race found"
+                };
             }
 
             return {
@@ -88,8 +107,11 @@ export const f1Tool = tool({
                 time: race.time || "TBA",
                 round: race.round,
             };
-        } catch (error) {
-            return { error: "Failed to fetch F1 data" };
+        } catch {
+            return {
+                raceName: "API Error",
+                error: "Failed to fetch F1 data"
+            };
         }
     },
 });

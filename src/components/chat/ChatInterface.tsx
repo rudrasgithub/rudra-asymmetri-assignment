@@ -167,7 +167,7 @@ export default function ChatInterface({
     }
 
     return (
-        <div className="flex h-screen bg-gray-50 overflow-hidden">
+        <div className="flex h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 overflow-hidden">
             {/* Sidebar Component */}
             <ChatSidebar
                 currentUser={userName}
@@ -176,11 +176,16 @@ export default function ChatInterface({
             />
 
             {/* Main Chat Area */}
-            <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full bg-white shadow-xl h-full">
+            <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full bg-white/80 backdrop-blur-sm shadow-2xl shadow-slate-200/50 h-full border-x border-slate-100">
                 {/* Error Banner */}
                 {apiError && (
-                    <div className="p-4 bg-red-50 text-red-600 text-sm border-b border-red-200">
-                        Error: {apiError.message}
+                    <div className="p-4 bg-gradient-to-r from-red-50 to-rose-50 text-red-600 text-sm border-b border-red-100 flex items-center gap-3">
+                        <div className="p-1.5 bg-red-100 rounded-full">
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        {apiError.message}
                     </div>
                 )}
 

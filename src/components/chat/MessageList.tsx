@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { Bot, User, Loader2 } from "lucide-react";
+import { Bot, User, Loader2, Sparkles } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { WeatherCard, StockCard, F1Card } from "@/components/chat/tool-cards";
 import { CMessage, ToolInvocation } from "@/types";
@@ -47,24 +47,48 @@ export default function MessageList({ messages, isProcessing }: MessageListProps
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    // Empty state
+    // Empty state - premium landing
     if (messages.length === 0) {
         return (
-            <ScrollArea className="flex-1 p-4">
-                <div className="text-center text-gray-400 mt-20">
-                    <Bot className="h-12 w-12 mx-auto mb-4 text-purple-300" />
-                    <p className="text-lg font-medium">Hello! I&apos;m Rudra AI</p>
-                    <p className="mt-2">Try asking about weather, stocks, or F1 races!</p>
-                    <div className="mt-4 flex flex-wrap justify-center gap-2">
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
-                            Weather in Tokyo?
-                        </span>
-                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs">
-                            TSLA stock price
-                        </span>
-                        <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs">
-                            Next F1 race?
-                        </span>
+            <ScrollArea className="flex-1">
+                <div className="flex flex-col items-center justify-center min-h-[70vh] px-6">
+                    {/* Animated logo */}
+                    <div className="relative mb-8">
+                        <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-purple-600 rounded-3xl blur-2xl opacity-30 animate-pulse" />
+                        <div className="relative p-5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-3xl shadow-2xl shadow-purple-500/30">
+                            <Sparkles className="h-12 w-12 text-white" />
+                        </div>
+                    </div>
+
+                    <h2 className="text-3xl font-bold text-slate-800 mb-3">
+                        Welcome to Rudra AI
+                    </h2>
+                    <p className="text-slate-500 text-center max-w-md mb-10">
+                        Your intelligent assistant powered by Google Gemini. Ask me anything about weather, stocks, or Formula 1!
+                    </p>
+
+                    {/* Suggestion chips */}
+                    <div className="flex flex-wrap justify-center gap-3 max-w-lg">
+                        <SuggestionChip
+                            emoji="🌤️"
+                            text="What's the weather in Paris?"
+                            color="blue"
+                        />
+                        <SuggestionChip
+                            emoji="📈"
+                            text="NVDA stock price"
+                            color="green"
+                        />
+                        <SuggestionChip
+                            emoji="🏎️"
+                            text="When's the next F1 race?"
+                            color="red"
+                        />
+                        <SuggestionChip
+                            emoji="🌡️"
+                            text="Temperature in Mumbai"
+                            color="orange"
+                        />
                     </div>
                 </div>
             </ScrollArea>
@@ -72,20 +96,20 @@ export default function MessageList({ messages, isProcessing }: MessageListProps
     }
 
     return (
-        <ScrollArea className="flex-1 p-4">
-            <div className="flex flex-col gap-6 pb-4">
+        <ScrollArea className="flex-1">
+            <div className="flex flex-col gap-6 p-6 pb-4">
                 {messages.map((msg) => {
                     // User message bubble
                     if (msg.role === "user") {
                         return (
-                            <div key={msg.id} className="flex gap-3 justify-end">
-                                <div className="max-w-[80%] rounded-2xl p-4 bg-black text-white rounded-tr-none">
+                            <div key={msg.id} className="flex gap-4 justify-end animate-in slide-in-from-right-2 duration-300">
+                                <div className="max-w-[75%] rounded-2xl rounded-tr-sm p-4 bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-purple-500/20">
                                     <p className="text-sm leading-relaxed whitespace-pre-wrap">
                                         {msg.content}
                                     </p>
                                 </div>
-                                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                    <User className="h-5 w-5 text-gray-600" />
+                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center flex-shrink-0 shadow-md ring-2 ring-slate-200">
+                                    <User className="h-5 w-5 text-white" />
                                 </div>
                             </div>
                         );
@@ -108,28 +132,30 @@ export default function MessageList({ messages, isProcessing }: MessageListProps
                     if (!hasContent) return null;
 
                     return (
-                        <div key={msg.id} className="flex gap-3 justify-start">
-                            <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center border border-purple-200 flex-shrink-0">
-                                <Bot className="h-5 w-5 text-purple-600" />
+                        <div key={msg.id} className="flex gap-4 justify-start animate-in slide-in-from-left-2 duration-300">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-500/20 ring-2 ring-purple-200">
+                                <Bot className="h-5 w-5 text-white" />
                             </div>
 
-                            <div className="max-w-[80%] rounded-2xl p-4 bg-gray-100 text-black rounded-tl-none">
+                            <div className="max-w-[75%] rounded-2xl rounded-tl-sm p-4 bg-white border border-slate-200 shadow-sm">
                                 {/* Fallback when all tools failed */}
                                 {showFallback ? (
-                                    <p className="text-sm text-gray-500 italic">
-                                        Could not retrieve data from the API
+                                    <p className="text-sm text-slate-400 italic">
+                                        Unable to fetch data at this time
                                     </p>
                                 ) : textContent ? (
-                                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                                    <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">
                                         {textContent}
                                     </p>
                                 ) : null}
 
                                 {/* Pending tools - loading indicators */}
                                 {pendingTools.map((inv) => (
-                                    <div key={inv.toolCallId} className="text-xs text-gray-400 mt-2 flex items-center gap-2">
-                                        <Loader2 className="h-3 w-3 animate-spin" />
-                                        Executing {inv.toolName}...
+                                    <div key={inv.toolCallId} className="flex items-center gap-2 mt-3 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100">
+                                        <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
+                                        <span className="text-xs text-slate-500">
+                                            Fetching {inv.toolName.replace("get", "")} data...
+                                        </span>
                                     </div>
                                 ))}
 
@@ -142,14 +168,18 @@ export default function MessageList({ messages, isProcessing }: MessageListProps
 
                 {/* Thinking indicator */}
                 {isProcessing && messages[messages.length - 1]?.role === "user" && (
-                    <div className="flex gap-3 justify-start">
-                        <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center border border-purple-200">
-                            <Bot className="h-5 w-5 text-purple-600" />
+                    <div className="flex gap-4 justify-start animate-in fade-in duration-300">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/20 ring-2 ring-purple-200">
+                            <Bot className="h-5 w-5 text-white" />
                         </div>
-                        <div className="bg-gray-100 rounded-2xl rounded-tl-none p-4">
-                            <div className="flex items-center gap-2 text-sm text-gray-500">
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                Processing your request...
+                        <div className="px-5 py-4 bg-white border border-slate-200 rounded-2xl rounded-tl-sm shadow-sm">
+                            <div className="flex items-center gap-3">
+                                <div className="flex gap-1">
+                                    <span className="w-2 h-2 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                                    <span className="w-2 h-2 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                                    <span className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" />
+                                </div>
+                                <span className="text-sm text-slate-500">Thinking...</span>
                             </div>
                         </div>
                     </div>
@@ -158,5 +188,22 @@ export default function MessageList({ messages, isProcessing }: MessageListProps
                 <div ref={bottomRef} />
             </div>
         </ScrollArea>
+    );
+}
+
+// Suggestion chip component
+function SuggestionChip({ emoji, text, color }: { emoji: string; text: string; color: string }) {
+    const colorClasses: Record<string, string> = {
+        blue: "bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300",
+        green: "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 hover:border-emerald-300",
+        red: "bg-red-50 hover:bg-red-100 text-red-700 border-red-200 hover:border-red-300",
+        orange: "bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200 hover:border-orange-300",
+    };
+
+    return (
+        <button className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium border transition-all duration-200 hover:scale-105 hover:shadow-md ${colorClasses[color]}`}>
+            <span>{emoji}</span>
+            <span>{text}</span>
+        </button>
     );
 }
