@@ -51,24 +51,23 @@ export const sessions = pgTable("session", {
   expires: timestamp("expires", { mode: "date" }).notNull(),
 });
 
-// chat and Message schemas
-// export const chats = pgTable("chat", {
-//   id: uuid("id").defaultRandom().primaryKey(),
-//   userId: text("userId")
-//     .notNull()
-//     .references(() => users.id, { onDelete: "cascade" }), // Links chat to a user
-//   title: text("title").notNull(), 
-//   createdAt: timestamp("created_at").defaultNow().notNull(),
-// });
+export const chats = pgTable("chat", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }), // Links chat to a user
+  title: text("title").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
 
 
-// export const messages = pgTable("message", {
-//   id: uuid("id").defaultRandom().primaryKey(),
-//   chatId: uuid("chatId")
-//     .notNull()
-//     .references(() => chats.id, { onDelete: "cascade" }),
-//   role: text("role", { enum: ["user", "assistant", "system", "data", "tool"] }).notNull(),
-//   content: text("content"),
-//   toolInvocations: jsonb("tool_invocations"), 
-//   createdAt: timestamp("created_at").defaultNow().notNull(),
-// });
+export const messages = pgTable("message", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  chatId: uuid("chatId")
+    .notNull()
+    .references(() => chats.id, { onDelete: "cascade" }),
+  role: text("role", { enum: ["user", "assistant", "system", "data", "tool"] }).notNull(),
+  content: text("content"),
+  toolInvocations: jsonb("tool_invocations"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
