@@ -2,17 +2,17 @@
 
 import { useRef, useEffect } from "react";
 import { Bot, User, Loader2, Sparkles } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { WeatherCard, StockCard, F1Card } from "@/components/chat/tool-cards";
-import { CMessage, ToolInvocation } from "@/types";
+import { ChatMessage, ToolInvocation } from "@/types";
 
 interface MessageListProps {
-    messages: CMessage[];
+    messages: ChatMessage[];
     isProcessing: boolean;
+    onSuggestionClick?: (text: string) => void;
 }
 
-// Utility: Check if tool execution failed
-function didToolFail(tool: ToolInvocation): boolean {
+/** Check if a tool invocation returned a failure response */
+function isToolFailed(tool: ToolInvocation): boolean {
     if (!tool.result) return false;
     const res = tool.result;
 
@@ -23,8 +23,8 @@ function didToolFail(tool: ToolInvocation): boolean {
     return false;
 }
 
-// Render individual tool card based on type
-function renderToolResult(invocation: ToolInvocation) {
+/** Render the appropriate card component for a tool result */
+function renderToolCard(invocation: ToolInvocation) {
     const { toolName, toolCallId, result } = invocation;
 
     switch (toolName) {
@@ -39,20 +39,18 @@ function renderToolResult(invocation: ToolInvocation) {
     }
 }
 
-export default function MessageList({ messages, isProcessing }: MessageListProps) {
-    const bottomRef = useRef<HTMLDivElement>(null);
+export default function MessageList({ messages, isProcessing, onSuggestionClick }: MessageListProps) {
+    const scrollAnchor = useRef<HTMLDivElement>(null);
 
-    // Auto-scroll when messages update
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+        scrollAnchor.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    // Empty state - premium landing
+    // Empty state with suggestion chips
     if (messages.length === 0) {
         return (
             <div className="flex-1 overflow-y-auto">
                 <div className="flex flex-col items-center justify-center min-h-full px-6 py-12">
-                    {/* Animated logo */}
                     <div className="relative mb-8">
                         <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-purple-600 rounded-3xl blur-2xl opacity-30 animate-pulse" />
                         <div className="relative p-5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-3xl shadow-2xl shadow-purple-500/30">
@@ -67,28 +65,11 @@ export default function MessageList({ messages, isProcessing }: MessageListProps
                         Your intelligent assistant powered by Google Gemini. Ask me anything about weather, stocks, or Formula 1!
                     </p>
 
-                    {/* Suggestion chips */}
                     <div className="flex flex-wrap justify-center gap-3 max-w-lg">
-                        <SuggestionChip
-                            emoji="🌤️"
-                            text="What's the weather in Paris?"
-                            color="blue"
-                        />
-                        <SuggestionChip
-                            emoji="📈"
-                            text="NVDA stock price"
-                            color="green"
-                        />
-                        <SuggestionChip
-                            emoji="🏎️"
-                            text="When's the next F1 race?"
-                            color="red"
-                        />
-                        <SuggestionChip
-                            emoji="🌡️"
-                            text="Temperature in Mumbai"
-                            color="orange"
-                        />
+                        <SuggestionChip emoji="🌤️" text="What's the weather in Paris?" color="blue" onClick={onSuggestionClick} />
+                        <SuggestionChip emoji="📈" text="NVDA stock price" color="green" onClick={onSuggestionClick} />
+                        <SuggestionChip emoji="🏎️" text="When's the next F1 race?" color="red" onClick={onSuggestionClick} />
+                        <SuggestionChip emoji="🌡️" text="Temperature in Mumbai" color="orange" onClick={onSuggestionClick} />
                     </div>
                 </div>
             </div>
@@ -99,14 +80,11 @@ export default function MessageList({ messages, isProcessing }: MessageListProps
         <div className="flex-1 overflow-y-auto p-6">
             <div className="flex flex-col gap-6 pb-4 max-w-4xl mx-auto">
                 {messages.map((msg) => {
-                    // User message bubble
                     if (msg.role === "user") {
                         return (
                             <div key={msg.id} className="flex gap-4 justify-end animate-in slide-in-from-right-2 duration-300">
                                 <div className="max-w-[75%] rounded-2xl rounded-tr-sm p-4 bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-purple-500/20">
-                                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                                        {msg.content}
-                                    </p>
+                                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                                 </div>
                                 <div className="h-10 w-10 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center flex-shrink-0 shadow-md ring-2 ring-slate-200">
                                     <User className="h-5 w-5 text-white" />
@@ -115,21 +93,20 @@ export default function MessageList({ messages, isProcessing }: MessageListProps
                         );
                     }
 
-                    // Assistant message processing
+                    // Process assistant message tools
                     const tools = msg.toolInvocations || [];
-                    const textContent = msg.content?.trim() || "";
+                    const text = msg.content?.trim() || "";
 
-                    const pendingTools = tools.filter(t => !t.result);
-                    const finishedTools = tools.filter(t => t.result);
-                    const successfulTools = finishedTools.filter(t => !didToolFail(t));
+                    const pending = tools.filter(t => !t.result);
+                    const completed = tools.filter(t => t.result);
+                    const successful = completed.filter(t => !isToolFailed(t));
 
-                    const allDone = tools.length > 0 && pendingTools.length === 0;
-                    const allFailed = allDone && finishedTools.length > 0 && successfulTools.length === 0;
-                    const showFallback = allFailed && !textContent;
+                    const allComplete = tools.length > 0 && pending.length === 0;
+                    const allFailed = allComplete && completed.length > 0 && successful.length === 0;
+                    const showFallback = allFailed && !text;
 
-                    const hasContent = textContent || successfulTools.length > 0 || pendingTools.length > 0 || showFallback;
-
-                    if (!hasContent) return null;
+                    const hasVisibleContent = text || successful.length > 0 || pending.length > 0 || showFallback;
+                    if (!hasVisibleContent) return null;
 
                     return (
                         <div key={msg.id} className="flex gap-4 justify-start animate-in slide-in-from-left-2 duration-300">
@@ -138,35 +115,25 @@ export default function MessageList({ messages, isProcessing }: MessageListProps
                             </div>
 
                             <div className="max-w-[75%] rounded-2xl rounded-tl-sm p-4 bg-white border border-slate-200 shadow-sm">
-                                {/* Fallback when all tools failed */}
                                 {showFallback ? (
-                                    <p className="text-sm text-slate-400 italic">
-                                        Unable to fetch data at this time
-                                    </p>
-                                ) : textContent ? (
-                                    <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">
-                                        {textContent}
-                                    </p>
+                                    <p className="text-sm text-slate-400 italic">Unable to fetch data at this time</p>
+                                ) : text ? (
+                                    <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">{text}</p>
                                 ) : null}
 
-                                {/* Pending tools - loading indicators */}
-                                {pendingTools.map((inv) => (
+                                {pending.map((inv) => (
                                     <div key={inv.toolCallId} className="flex items-center gap-2 mt-3 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100">
                                         <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
-                                        <span className="text-xs text-slate-500">
-                                            Fetching {inv.toolName.replace("get", "")} data...
-                                        </span>
+                                        <span className="text-xs text-slate-500">Fetching {inv.toolName.replace("get", "")} data...</span>
                                     </div>
                                 ))}
 
-                                {/* Completed tool results */}
-                                {finishedTools.map(renderToolResult)}
+                                {completed.map(renderToolCard)}
                             </div>
                         </div>
                     );
                 })}
 
-                {/* Thinking indicator */}
                 {isProcessing && messages[messages.length - 1]?.role === "user" && (
                     <div className="flex gap-4 justify-start animate-in fade-in duration-300">
                         <div className="h-10 w-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/20 ring-2 ring-purple-200">
@@ -185,15 +152,21 @@ export default function MessageList({ messages, isProcessing }: MessageListProps
                     </div>
                 )}
 
-                <div ref={bottomRef} />
+                <div ref={scrollAnchor} />
             </div>
         </div>
     );
 }
 
-// Suggestion chip component
-function SuggestionChip({ emoji, text, color }: { emoji: string; text: string; color: string }) {
-    const colorClasses: Record<string, string> = {
+interface SuggestionChipProps {
+    emoji: string;
+    text: string;
+    color: string;
+    onClick?: (text: string) => void;
+}
+
+function SuggestionChip({ emoji, text, color, onClick }: SuggestionChipProps) {
+    const styles: Record<string, string> = {
         blue: "bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300",
         green: "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 hover:border-emerald-300",
         red: "bg-red-50 hover:bg-red-100 text-red-700 border-red-200 hover:border-red-300",
@@ -201,7 +174,10 @@ function SuggestionChip({ emoji, text, color }: { emoji: string; text: string; c
     };
 
     return (
-        <button className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium border transition-all duration-200 hover:scale-105 hover:shadow-md ${colorClasses[color]}`}>
+        <button
+            onClick={() => onClick?.(text)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium border transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer ${styles[color]}`}
+        >
             <span>{emoji}</span>
             <span>{text}</span>
         </button>

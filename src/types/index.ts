@@ -1,39 +1,46 @@
-// Chat Message & Tool Types
+/** Represents the execution state of a tool call */
+export type ToolState = "pending" | "result";
+
+/** Represents a role in the chat conversation */
+export type MessageRole = "user" | "assistant";
+
+/** Tool invocation with its execution state and result */
 export interface ToolInvocation {
     toolCallId: string;
     toolName: string;
     args: Record<string, unknown>;
-    state: "pending" | "result";
+    state: ToolState;
     result?: Record<string, unknown>;
 }
 
-export interface CMessage {
+/** Single message in a chat conversation */
+export interface ChatMessage {
     id: string;
-    role: "user" | "assistant";
+    role: MessageRole;
     content: string;
     toolInvocations?: ToolInvocation[];
 }
 
-// Chat Sidebar Item
-export interface ChatHistoryItem {
+/** Sidebar conversation item */
+export interface Conversation {
     id: string;
     title: string;
 }
 
-// Props for Chat Component
+/** Props for the main chat interface component */
 export interface ChatInterfaceProps {
     userName: string;
     initialChatId: string;
-    history: ChatHistoryItem[];
-    initialMessages?: CMessage[];
+    history: Conversation[];
+    initialMessages?: ChatMessage[];
 }
 
-// Page Props with Search Params
+/** Next.js page props with search parameters */
 export interface PageProps {
     searchParams: Promise<{ id?: string }>;
 }
 
-// Tool Response Types
+/** Weather API response data */
 export interface WeatherData {
     location?: string;
     temperature?: number;
@@ -43,6 +50,7 @@ export interface WeatherData {
     error?: string;
 }
 
+/** Stock market API response data */
 export interface StockData {
     symbol?: string;
     price?: string;
@@ -51,6 +59,7 @@ export interface StockData {
     error?: string;
 }
 
+/** F1 race schedule API response data */
 export interface RaceData {
     raceName?: string;
     circuit?: string;

@@ -3,7 +3,6 @@
 import { Cloud, Sun, CloudRain, Snowflake, Wind, Droplets, TrendingUp, TrendingDown, Flag, MapPin, Calendar, Clock } from "lucide-react";
 import { WeatherData, StockData, RaceData } from "@/types";
 
-// Weather Icon Helper
 function getWeatherIcon(condition?: string) {
     const c = condition?.toLowerCase() || "";
     if (c.includes("rain") || c.includes("drizzle")) return <CloudRain className="h-6 w-6 text-blue-400" />;
@@ -13,7 +12,6 @@ function getWeatherIcon(condition?: string) {
     return <Cloud className="h-6 w-6 text-slate-400" />;
 }
 
-// Weather Card Component
 export function WeatherCard({ data }: { data: WeatherData }) {
     if (!data || data.error || data.condition === "Unknown Location") {
         return null;
@@ -47,7 +45,6 @@ export function WeatherCard({ data }: { data: WeatherData }) {
     );
 }
 
-// Stock Card Component
 export function StockCard({ data }: { data: StockData }) {
     if (!data || data.error || !data.price || data.price === "0" || data.price === "0.00") {
         return null;
@@ -85,7 +82,6 @@ export function StockCard({ data }: { data: StockData }) {
     );
 }
 
-// F1 Card Component
 export function F1Card({ data }: { data: RaceData }) {
     if (!data || data.error || data.raceName === "Unknown Race" || data.raceName === "API Error") {
         return null;

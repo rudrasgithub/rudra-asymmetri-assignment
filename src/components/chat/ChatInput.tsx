@@ -15,7 +15,6 @@ export default function ChatInput({ value, onChange, onSubmit, disabled }: ChatI
     const inputRef = useRef<HTMLInputElement>(null);
     const canSubmit = value.trim().length > 0 && !disabled;
 
-    // Auto-focus input
     useEffect(() => {
         inputRef.current?.focus();
     }, [disabled]);
@@ -34,14 +33,13 @@ export default function ChatInput({ value, onChange, onSubmit, disabled }: ChatI
                         disabled={disabled}
                     />
 
-                    {/* Send button */}
                     <Button
                         type="submit"
                         disabled={!canSubmit}
                         size="icon"
                         className={`h-11 w-11 rounded-xl transition-all duration-300 ${canSubmit
-                                ? "bg-gradient-to-br from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105"
-                                : "bg-slate-200 text-slate-400"
+                            ? "bg-gradient-to-br from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105"
+                            : "bg-slate-200 text-slate-400"
                             }`}
                     >
                         {disabled ? (
@@ -52,7 +50,6 @@ export default function ChatInput({ value, onChange, onSubmit, disabled }: ChatI
                     </Button>
                 </div>
 
-                {/* Helper text */}
                 <p className="text-center text-xs text-slate-400 mt-3">
                     Rudra AI can make mistakes. Verify important information.
                 </p>

@@ -6,25 +6,23 @@ import {
   fetchUserConversations,
   loadConversationMessages
 } from "@/app/actions";
-import { CMessage, PageProps } from "@/types";
+import { ChatMessage, PageProps } from "@/types";
 
 export default async function HomePage({ searchParams }: PageProps) {
-  // Verify user authentication
   const session = await auth();
   if (!session?.user) {
     redirect("/login");
   }
 
-  // Extract conversation ID from URL params
-  const urlParams = await searchParams;
-  let activeConversationId = urlParams.id;
-  let conversationMessages: CMessage[] = [];
+  const params = await searchParams;
+  let chatId = params.id;
+  let messages: ChatMessage[] = [];
 
-  // No ID provided - start fresh conversation
-  if (!activeConversationId) {
-    const freshConversationId = await initializeConversation("New Chat");
-    if (freshConversationId) {
-      redirect(`/?id=${freshConversationId}`);
+  // Create new conversation if no ID provided
+  if (!chatId) {
+    const newId = await initializeConversation("New Chat");
+    if (newId) {
+      redirect(`/?id=${newId}`);
     }
     return (
       <div className="flex items-center justify-center h-screen">
@@ -33,26 +31,24 @@ export default async function HomePage({ searchParams }: PageProps) {
     );
   }
 
-  // ID exists - hydrate with existing messages
-  const storedMessages = await loadConversationMessages(activeConversationId);
-
-  conversationMessages = storedMessages.map((msg) => ({
+  // Load existing conversation messages
+  const stored = await loadConversationMessages(chatId);
+  messages = stored.map((msg) => ({
     id: msg.id,
     role: msg.role as "user" | "assistant",
     content: msg.content ?? "",
-    toolInvocations: (msg.toolInvocations as CMessage["toolInvocations"]) ?? undefined,
+    toolInvocations: (msg.toolInvocations as ChatMessage["toolInvocations"]) ?? undefined,
   }));
 
-  // Fetch sidebar data
-  const conversationHistory = await fetchUserConversations();
+  const history = await fetchUserConversations();
 
   return (
     <ChatInterface
-      key={activeConversationId}
+      key={chatId}
       userName={session.user.name ?? "Guest"}
-      initialChatId={activeConversationId}
-      history={conversationHistory}
-      initialMessages={conversationMessages}
+      initialChatId={chatId}
+      history={history}
+      initialMessages={messages}
     />
   );
 }

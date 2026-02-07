@@ -5,97 +5,83 @@ import { chats, messages } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { auth } from "@/config/authHandler";
 
-/**
- * Initialize a new conversation for the current user
- */
-export async function initializeConversation(defaultTitle: string = "Untitled Chat") {
+/** Create a new chat conversation for the authenticated user */
+export async function initializeConversation(title: string = "Untitled Chat") {
     const session = await auth();
     if (!session?.user?.id) return null;
 
     try {
-        const [newChat] = await db.insert(chats).values({
+        const [chat] = await db.insert(chats).values({
             userId: session.user.id,
-            title: defaultTitle,
+            title,
         }).returning({ id: chats.id });
 
-        return newChat?.id ?? null;
+        return chat?.id ?? null;
     } catch (err) {
-        console.error("Conversation init failed:", err);
+        console.error("Failed to create conversation:", err);
         return null;
     }
 }
 
-/**
- * Retrieve all conversations for sidebar display
- */
+/** Fetch all conversations for the current user (sidebar display) */
 export async function fetchUserConversations() {
     const session = await auth();
     if (!session?.user?.id) return [];
 
     try {
-        const userChats = await db
+        return await db
             .select({ id: chats.id, title: chats.title })
             .from(chats)
             .where(eq(chats.userId, session.user.id))
             .orderBy(desc(chats.createdAt));
-
-        return userChats;
     } catch (err) {
-        console.error("Fetch conversations failed:", err);
+        console.error("Failed to fetch conversations:", err);
         return [];
     }
 }
 
-/**
- * Load message history for a specific conversation
- */
-export async function loadConversationMessages(conversationId: string) {
+/** Load all messages for a specific conversation */
+export async function loadConversationMessages(chatId: string) {
     try {
-        const messageList = await db
+        return await db
             .select()
             .from(messages)
-            .where(eq(messages.chatId, conversationId))
+            .where(eq(messages.chatId, chatId))
             .orderBy(messages.createdAt);
-
-        return messageList;
     } catch (err) {
-        console.error("Load messages failed:", err);
+        console.error("Failed to load messages:", err);
         return [];
     }
 }
 
-/**
- * Modify the title of an existing conversation
- */
-export async function modifyConversationTitle(conversationId: string, newTitle: string) {
+/** Update conversation title */
+export async function modifyConversationTitle(chatId: string, title: string) {
     try {
-        await db.update(chats).set({ title: newTitle }).where(eq(chats.id, conversationId));
+        await db.update(chats).set({ title }).where(eq(chats.id, chatId));
         return { ok: true };
     } catch (err) {
-        console.error("Title update failed:", err);
+        console.error("Failed to update title:", err);
         return { ok: false, message: "Could not update title" };
     }
 }
 
-/**
- * Persist a message to the database
- */
+/** Save a message to the database */
 export async function persistMessage(
-    conversationId: string,
+    chatId: string,
     role: "user" | "assistant",
     content: string,
     toolData?: unknown
 ) {
     try {
         await db.insert(messages).values({
-            chatId: conversationId,
+            chatId,
             role,
             content,
             toolInvocations: toolData ?? null,
         });
         return { ok: true };
     } catch (err) {
-        console.error("Message persistence failed:", err);
+        console.error("Failed to save message:", err);
         return { ok: false };
     }
 }
