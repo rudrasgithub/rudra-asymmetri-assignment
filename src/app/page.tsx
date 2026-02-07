@@ -15,7 +15,7 @@ export default async function HomePage({ searchParams }: PageProps) {
   }
 
   const params = await searchParams;
-  let chatId = params.id;
+  const chatId = params.id;
   let messages: ChatMessage[] = [];
 
   // Create new conversation if no ID provided
