@@ -79,39 +79,38 @@ export const stockTool = tool({
     },
 });
 
-// F1 Race Tool - fetches next F1 race info
+// F1 Race Tool - fetches next F1 race using Jolpi Ergast API
 export const f1Tool = tool({
     description: "Get information about the next F1 race",
     inputSchema: z.object({}),
     execute: async () => {
         try {
-            const url = "https://ergast.com/api/f1/current/next.json";
-
-            const response = await fetch(url);
+            // Using Jolpi mirror of Ergast API
+            const response = await fetch("https://api.jolpi.ca/ergast/f1/2026/races/?format=json");
             const data = await response.json();
 
-            const race = data.MRData.RaceTable.Races[0];
-            if (!race) {
-                return {
-                    raceName: "Unknown Race",
-                    error: "No upcoming race found"
-                };
+            const races = data.MRData?.RaceTable?.Races || [];
+            if (races.length === 0) {
+                return { raceName: "Unknown Race", error: "No races found for 2026" };
             }
+
+            // Find next upcoming race based on current date
+            const today = new Date();
+            const upcoming = races.find((race: { date: string }) => new Date(race.date) >= today);
+            const race = upcoming || races[0];
 
             return {
                 raceName: race.raceName,
-                circuit: race.Circuit.circuitName,
-                location: race.Circuit.Location.locality,
-                country: race.Circuit.Location.country,
+                circuit: race.Circuit?.circuitName || "TBA",
+                location: race.Circuit?.Location?.locality || "TBA",
+                country: race.Circuit?.Location?.country || "TBA",
                 date: race.date,
                 time: race.time || "TBA",
                 round: race.round,
             };
-        } catch {
-            return {
-                raceName: "API Error",
-                error: "Failed to fetch F1 data"
-            };
+        } catch (err) {
+            console.error("F1 API error:", err);
+            return { raceName: "API Error", error: "Failed to fetch F1 data" };
         }
     },
 });
