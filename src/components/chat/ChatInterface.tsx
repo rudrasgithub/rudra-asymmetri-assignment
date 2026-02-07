@@ -186,14 +186,14 @@ export default function ChatInterface({
     }
 
     return (
-        <div className="flex h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 overflow-hidden">
+        <div className="flex h-screen bg-slate-100 overflow-hidden">
             <ChatSidebar
                 currentUser={userName}
                 activeId={initialChatId}
                 conversations={history}
             />
 
-            <main className="flex-1 flex flex-col w-full bg-white/80 backdrop-blur-sm border-l border-slate-100 overflow-hidden">
+            <main className="flex-1 flex flex-col w-full border-l border-slate-200 overflow-hidden">
                 {error && (
                     <div className="p-4 bg-gradient-to-r from-red-50 to-rose-50 text-red-600 text-sm border-b border-red-100 flex items-center gap-3">
                         <div className="p-1.5 bg-red-100 rounded-full">

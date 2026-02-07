@@ -11,7 +11,6 @@ interface MessageListProps {
     onSuggestionClick?: (text: string) => void;
 }
 
-/** Check if a tool invocation returned a failure response */
 function isToolFailed(tool: ToolInvocation): boolean {
     if (!tool.result) return false;
     const res = tool.result;
@@ -23,7 +22,6 @@ function isToolFailed(tool: ToolInvocation): boolean {
     return false;
 }
 
-/** Render the appropriate card component for a tool result */
 function renderToolCard(invocation: ToolInvocation) {
     const { toolName, toolCallId, result } = invocation;
 
@@ -46,10 +44,9 @@ export default function MessageList({ messages, isProcessing, onSuggestionClick 
         scrollAnchor.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    // Empty state with suggestion chips
     if (messages.length === 0) {
         return (
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto bg-transparent">
                 <div className="flex flex-col items-center justify-center min-h-full px-6 py-12">
                     <div className="relative mb-8">
                         <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-purple-600 rounded-3xl blur-2xl opacity-30 animate-pulse" />
@@ -76,8 +73,14 @@ export default function MessageList({ messages, isProcessing, onSuggestionClick 
         );
     }
 
+    // Check if we should show the initial loading indicator
+    const lastMsg = messages[messages.length - 1];
+    const showInitialLoading = isProcessing && lastMsg?.role === "assistant" &&
+        !lastMsg.content?.trim() &&
+        (!lastMsg.toolInvocations || lastMsg.toolInvocations.length === 0);
+
     return (
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 bg-transparent">
             <div className="flex flex-col gap-6 pb-4 max-w-4xl mx-auto">
                 {messages.map((msg) => {
                     if (msg.role === "user") {
@@ -93,7 +96,6 @@ export default function MessageList({ messages, isProcessing, onSuggestionClick 
                         );
                     }
 
-                    // Process assistant message tools
                     const tools = msg.toolInvocations || [];
                     const text = msg.content?.trim() || "";
 
@@ -105,6 +107,14 @@ export default function MessageList({ messages, isProcessing, onSuggestionClick 
                     const allFailed = allComplete && completed.length > 0 && successful.length === 0;
                     const showFallback = allFailed && !text;
 
+                    // Show loading if this is the last message and still processing with no content yet
+                    const isLastMsg = msg === lastMsg;
+                    const hasNoContent = !text && tools.length === 0;
+
+                    if (isLastMsg && hasNoContent && isProcessing) {
+                        return null; // Will be handled by showInitialLoading below
+                    }
+
                     const hasVisibleContent = text || successful.length > 0 || pending.length > 0 || showFallback;
                     if (!hasVisibleContent) return null;
 
@@ -114,27 +124,51 @@ export default function MessageList({ messages, isProcessing, onSuggestionClick 
                                 <Bot className="h-5 w-5 text-white" />
                             </div>
 
-                            <div className="max-w-[75%] rounded-2xl rounded-tl-sm p-4 bg-white border border-slate-200 shadow-sm">
+                            <div className="max-w-[75%] rounded-2xl rounded-tl-sm p-4 bg-white border border-slate-300 shadow-sm">
+                                {/* Pending tools - show loading spinners first */}
+                                {pending.length > 0 && (
+                                    <div className="space-y-2 mb-3">
+                                        {pending.map((inv) => (
+                                            <div key={inv.toolCallId} className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100">
+                                                <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
+                                                <span className="text-xs text-slate-500">Fetching {inv.toolName.replace("get", "")} data...</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Completed tool cards */}
+                                {successful.length > 0 && (
+                                    <div className="space-y-3 mb-3">
+                                        {successful.map(renderToolCard)}
+                                    </div>
+                                )}
+
+                                {/* Text content - shown after tool cards */}
                                 {showFallback ? (
                                     <p className="text-sm text-slate-400 italic">Unable to fetch data at this time</p>
                                 ) : text ? (
                                     <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">{text}</p>
                                 ) : null}
 
-                                {pending.map((inv) => (
-                                    <div key={inv.toolCallId} className="flex items-center gap-2 mt-3 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100">
-                                        <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
-                                        <span className="text-xs text-slate-500">Fetching {inv.toolName.replace("get", "")} data...</span>
+                                {/* Show typing indicator if still streaming text */}
+                                {isLastMsg && isProcessing && !text && successful.length > 0 && (
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <div className="flex gap-1">
+                                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" />
+                                        </div>
+                                        <span className="text-xs text-slate-400">Generating response...</span>
                                     </div>
-                                ))}
-
-                                {completed.map(renderToolCard)}
+                                )}
                             </div>
                         </div>
                     );
                 })}
 
-                {isProcessing && messages[messages.length - 1]?.role === "user" && (
+                {/* Initial loading indicator - shown before any content arrives */}
+                {showInitialLoading && (
                     <div className="flex gap-4 justify-start animate-in fade-in duration-300">
                         <div className="h-10 w-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/20 ring-2 ring-purple-200">
                             <Bot className="h-5 w-5 text-white" />

@@ -3,6 +3,8 @@
 import { Cloud, Sun, CloudRain, Snowflake, Wind, Droplets, TrendingUp, TrendingDown, Flag, MapPin, Calendar, Clock } from "lucide-react";
 import { WeatherData, StockData, RaceData } from "@/types";
 
+const CARD_WIDTH = "w-64";
+
 function getWeatherIcon(condition?: string) {
     const c = condition?.toLowerCase() || "";
     if (c.includes("rain") || c.includes("drizzle")) return <CloudRain className="h-6 w-6 text-blue-400" />;
@@ -18,7 +20,7 @@ export function WeatherCard({ data }: { data: WeatherData }) {
     }
 
     return (
-        <div className="mt-3 p-3 bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 rounded-xl text-white overflow-hidden">
+        <div className={`mt-3 p-3 ${CARD_WIDTH} bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 rounded-xl text-white`}>
             <div className="flex items-center justify-between mb-2">
                 <div>
                     <h3 className="font-semibold text-sm">{data.location}</h3>
@@ -54,7 +56,7 @@ export function StockCard({ data }: { data: StockData }) {
     const isPositive = changeNum >= 0;
 
     return (
-        <div className={`mt-3 p-3 rounded-xl overflow-hidden ${isPositive
+        <div className={`mt-3 p-3 ${CARD_WIDTH} rounded-xl ${isPositive
             ? "bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600"
             : "bg-gradient-to-br from-rose-400 via-red-500 to-pink-600"
             } text-white`}>
@@ -88,7 +90,7 @@ export function F1Card({ data }: { data: RaceData }) {
     }
 
     return (
-        <div className="mt-3 p-3 bg-gradient-to-br from-red-500 via-rose-500 to-orange-500 rounded-xl text-white overflow-hidden">
+        <div className={`mt-3 p-3 ${CARD_WIDTH} bg-gradient-to-br from-red-500 via-rose-500 to-orange-500 rounded-xl text-white`}>
             <div className="flex items-center gap-2 mb-2">
                 <div className="p-1.5 bg-white/20 rounded-lg">
                     <Flag className="h-4 w-4" />
@@ -102,12 +104,12 @@ export function F1Card({ data }: { data: RaceData }) {
             <div className="space-y-1.5 text-xs">
                 <div className="flex items-center gap-2">
                     <MapPin className="h-3 w-3 text-white/70" />
-                    <span className="font-medium">{data.circuit}</span>
+                    <span className="font-medium truncate">{data.circuit}</span>
                 </div>
 
                 <div className="flex items-center gap-2">
                     <span className="text-white/70">📍</span>
-                    <span>{data.location}, {data.country}</span>
+                    <span className="truncate">{data.location}, {data.country}</span>
                 </div>
 
                 <div className="flex gap-2 pt-1">

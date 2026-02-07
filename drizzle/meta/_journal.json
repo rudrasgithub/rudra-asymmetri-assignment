@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1770380060011,
-      "tag": "0000_warm_clea",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1770385251125,
-      "tag": "0001_ancient_runaways",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1770387111413,
-      "tag": "0002_red_klaw",
+      "when": 1770435936830,
+      "tag": "0000_rich_war_machine",
       "breakpoints": true
     }
   ]
